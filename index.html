@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Property Recommendations</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        padding: 20px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      h1 {
+        text-align: center;
+        color: #2c3e50;
+      }
+
+      .entry {
+        margin-bottom: 50px;
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .section-title {
+        margin: 20px 0 10px;
+        color: #34495e;
+        border-left: 5px solid #3498db;
+        padding-left: 10px;
+      }
+
+      .properties-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .property-card {
+        background: #ecf0f1;
+        border-radius: 10px;
+        padding: 15px;
+        width: 250px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+      }
+
+      .property-card:hover {
+        transform: scale(1.03);
+      }
+
+      .property-card p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+
+      .email {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Property Recommendations Viewer</h1>
+    <div id="data-container">Loading...</div>
+
+    <script>
+      const API_URL = "http://localhost:8000/api/search-history/";
+      const ACCESS_TOKEN =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUxMDg1Njg3LCJpYXQiOjE3NTA5OTkyODcsImp0aSI6IjBiNjc1ODExZGE3ZTRmMjViZjcyOWQ3MGQyY2VlYTM2IiwidXNlcl9pZCI6MX0.oEYjOjQNvIOTd7ju31_3uMktTdipCy5cBiA0XMg3HYs";
+
+      async function fetchData() {
+        try {
+          const response = await fetch(API_URL, {
+            headers: {
+              Authorization: "Bearer " + ACCESS_TOKEN,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Failed to fetch data");
+
+          const data = await response.json();
+          const container = document.getElementById("data-container");
+          container.innerHTML = "";
+
+          data.forEach((entry) => {
+            const email = entry.user?.email || "N/A";
+
+            const entryDiv = document.createElement("div");
+            entryDiv.className = "entry";
+
+            const emailEl = document.createElement("div");
+            emailEl.className = "email";
+            emailEl.textContent = `User: ${email}`;
+            entryDiv.appendChild(emailEl);
+
+            // Recommendations
+            if (entry.recommendations && entry.recommendations.length > 0) {
+              const recTitle = document.createElement("div");
+              recTitle.className = "section-title";
+              recTitle.textContent = "Recommendations:";
+              entryDiv.appendChild(recTitle);
+
+              const recRow = document.createElement("div");
+              recRow.className = "properties-row";
+
+              entry.recommendations.forEach((rec) => {
+                const card = document.createElement("div");
+                card.className = "property-card";
+                card.innerHTML = `
+                <p><strong>ID:</strong> ${rec.id}</p>
+                <p><strong>Description:</strong> ${rec.description}</p>
+                <p><strong>BHK:</strong> ${rec.bhk}</p>
+                <p><strong>Location:</strong> ${rec.location}</p>
+                <p><strong>Price:</strong> ₹${rec.price}</p>
+                <p><strong>Score:</strong> ${rec.similarity_score.toFixed(
+                  2
+                )}</p>
+              `;
+                recRow.appendChild(card);
+              });
+
+              entryDiv.appendChild(recRow);
+            }
+
+            // Results
+            if (entry.results && entry.results.length > 0) {
+              const resultTitle = document.createElement("div");
+              resultTitle.className = "section-title";
+              resultTitle.textContent = "Search Results:";
+              entryDiv.appendChild(resultTitle);
+
+              const resultRow = document.createElement("div");
+              resultRow.className = "properties-row";
+
+              entry.results.forEach((res) => {
+                const card = document.createElement("div");
+                card.className = "property-card";
+                card.innerHTML = `
+                <p><strong>ID:</strong> ${res.id}</p>
+                <p><strong>Description:</strong> ${res.description}</p>
+                <p><strong>BHK:</strong> ${res.bhk}</p>
+                <p><strong>Location:</strong> ${res.location}</p>
+                <p><strong>Price:</strong> ₹${res.price}</p>
+                <p><strong>Score:</strong> ${res.similarity_score.toFixed(
+                  2
+                )}</p>
+              `;
+                resultRow.appendChild(card);
+              });
+
+              entryDiv.appendChild(resultRow);
+            }
+
+            container.appendChild(entryDiv);
+          });
+        } catch (error) {
+          document.getElementById("data-container").innerHTML =
+            "❌ Error loading data: " + error.message;
+        }
+      }
+
+      fetchData();
+    </script>
+  </body>
+</html>
