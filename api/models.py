@@ -35,3 +35,15 @@ class Property(models.Model):
 
     def __str__(self):
         return f"{self.bhk}BHK in {self.location} - ₹{self.price}"
+
+class PropertyInterest(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    watch_time = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.id} - {self.user.username} is interested in {self.property.id}"
+
+    class Meta:
+        unique_together = ('user', 'property')  # avoid duplicates

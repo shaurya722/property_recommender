@@ -154,3 +154,47 @@ class RecommendView(APIView):
             
             return Response(results['matches'])
         return Response(serializer.errors, status=400)
+
+
+# views.py
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Property, PropertyInterest, CustomUser
+from .serializers import PropertyInterestCreateSerializer
+from .pinecone_client import search_properties_in_index
+
+class PropertyWatchAPIView(APIView):
+    def post(self, request):
+        serializer = PropertyInterestCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_id = serializer.validated_data['user_id']
+        property_id = serializer.validated_data['property_id']
+        watch_time = serializer.validated_data['watch_time']
+
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            prop = Property.objects.get(id=property_id)
+        except (CustomUser.DoesNotExist, Property.DoesNotExist):
+            return Response({'error': 'User or Property not found'}, status=404)
+
+        interested = False
+
+        if watch_time >= 10:
+            interest_obj, created = PropertyInterest.objects.update_or_create(
+                user=user,
+                property=prop,
+                defaults={"watch_time": watch_time}
+            )
+            interested = True
+
+        # Use Pinecone to get recommendations based on property description
+        pinecone_results = search_properties_in_index(prop.description)
+        recommendations = pinecone_results.get('matches', [])
+
+        return Response({
+            "status": "tracked",
+            "interested": interested,
+            "recommendations": recommendations
+        }, status=status.HTTP_200_OK)

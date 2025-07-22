@@ -5,7 +5,8 @@ from .views import (
     RecommendView,
     RegisterView,
     LoginView,
-    SearchHistoryView
+    SearchHistoryView,
+    PropertyWatchAPIView
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path('add-property/', AddPropertyView.as_view(), name='add-property'),
     path('search/', SearchPropertyView.as_view(), name='search'),
     path('recommend/', RecommendView.as_view(), name='recommend'),
+    path('property-watch/', PropertyWatchAPIView.as_view(), name='property-watch'),
 ]

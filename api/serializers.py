@@ -28,6 +28,13 @@ class RecommendSerializer(serializers.Serializer):
     bhk = serializers.IntegerField()
     location = serializers.CharField()
 
+
+class PropertyInterestCreateSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    property_id = serializers.IntegerField()
+    watch_time = serializers.IntegerField()
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 

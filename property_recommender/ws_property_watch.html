@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Property Watch WebSocket Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2em;
+      }
+      label {
+        display: block;
+        margin-top: 1em;
+      }
+      input,
+      button {
+        margin-top: 0.5em;
+      }
+      #response {
+        margin-top: 2em;
+        white-space: pre-wrap;
+        background: #f4f4f4;
+        padding: 1em;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Test Property Watch WebSocket</h2>
+    <form id="wsForm" onsubmit="return false;">
+      <label>User ID: <input type="number" id="user_id" required /></label>
+      <label
+        >Property ID: <input type="text" id="property_id" required
+      /></label>
+      <label
+        >Watch Time (seconds): <input type="number" id="watch_time" required
+      /></label>
+      <button id="connectBtn">Connect & Send</button>
+    </form>
+    <div id="response"></div>
+
+    <script>
+      document.getElementById("connectBtn").onclick = function () {
+        const user_id = document.getElementById("user_id").value;
+        const property_id = document.getElementById("property_id").value;
+        const watch_time = document.getElementById("watch_time").value;
+        const responseDiv = document.getElementById("response");
+        responseDiv.textContent = "";
+
+        if (!user_id || !property_id || !watch_time) {
+          responseDiv.textContent = "All fields are required.";
+          return;
+        }
+
+        const ws = new WebSocket("ws://localhost:8000/ws/property-watch/");
+
+        ws.onopen = function () {
+          ws.send(
+            JSON.stringify({
+              user_id: Number(user_id),
+              property_id: property_id,
+              watch_time: Number(watch_time),
+            })
+          );
+        };
+
+        ws.onmessage = function (event) {
+          let data;
+          try {
+            data = JSON.parse(event.data);
+            let html = `<strong>Status:</strong> ${data.status || ""}<br>`;
+            html += `<strong>Interested:</strong> ${
+              data.interested ? "Yes" : "No"
+            }<br>`;
+            if (data.recommendations && data.recommendations.length > 0) {
+              html += `<strong>Recommendations:</strong><br>`;
+              html += `<table border='1' cellpadding='5' style='border-collapse:collapse;'><tr>`;
+              // Table headers
+              Object.keys(data.recommendations[0]).forEach((key) => {
+                html += `<th>${key}</th>`;
+              });
+              html += `</tr>`;
+              // Table rows
+              data.recommendations.forEach((rec) => {
+                html += `<tr>`;
+                Object.values(rec).forEach((val) => {
+                  html += `<td>${val}</td>`;
+                });
+                html += `</tr>`;
+              });
+              html += `</table>`;
+            } else {
+              html += `<strong>Recommendations:</strong> None`;
+            }
+            responseDiv.innerHTML = html;
+          } catch (e) {
+            responseDiv.textContent = "Response:\n" + event.data;
+          }
+          ws.close();
+        };
+
+        ws.onerror = function (event) {
+          responseDiv.textContent =
+            "WebSocket error. Is the server running with Daphne/Uvicorn?";
+        };
+      };
+    </script>
+  </body>
+</html>
